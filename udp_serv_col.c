@@ -13,6 +13,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <locale.h>
+#include <wait.h>
+#include <sys/prctl.h>
 #include "nfc.h"
 
 #define SIZE_FLOW	48
@@ -91,6 +93,8 @@ main(int argc, char **argv) {
 			     exit(1);
 		}
 			 
+      pid_t cpid, w;
+      int wstatus;
    for(;;) {
       timeRec.tv_sec = 1;
       timeRec.tv_usec = 0;
@@ -133,6 +137,14 @@ main(int argc, char **argv) {
 		  //Вывод 
 	          //SQL
 		  if(flush) {
+		      flush=0;
+		      cpid = fork();
+		      if(cpid ==  -1) {
+			perror("fork");
+			exit(EXIT_FAILURE);
+		      }
+		      if(cpid == 0) {
+			prctl(PR_SET_NAME, "nfcd: write log to DB\0", NULL, NULL, NULL);
 		      LogMessage("nfcd", "Export entries ...");
 		      tosql(data_collection, head, count_entry, table);
 		      printf("Count_entry %d\n", count_entry);
@@ -143,8 +155,8 @@ main(int argc, char **argv) {
        		      LogMessage("nfcd", "compressed: %.2f %%", (float) count_entry/(float) count_entry2);
 		     {   i = 0;
 			  printf("Trap_free\n");
-			while(i <= count_entry) {
-		           free(*(data_collection + i - 1));
+			while(i < count_entry) {
+		           free(*(data_collection + i));
 			   i++;
 		       }
 		       printf("Trap_free1\n");
@@ -154,7 +166,22 @@ main(int argc, char **argv) {
 		     }
 		      printf("FLUSH\n");
 		      flush=0;
+		      exit(0);
+		      } else {
+		     	{   i = 0;
+				  printf("Trap_free\n");
+				while(i < count_entry) {
+		           	 free(*(data_collection + i));
+			   	 i++;
+		       	        }
+		       		printf("Trap_free1\n");
+		       		count_entry1 = 0;
+		       		count_entry = 0;
+		       		count_entry2 = 0;
+		      }
+		      }
 		   }
+      		   waitpid(-1, &wstatus, WNOHANG);
 		  //tosql(data_collection, head); 
 		  //tosql(data, head);
 		  //stdout
