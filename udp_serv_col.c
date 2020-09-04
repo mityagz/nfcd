@@ -24,6 +24,7 @@
 
 main(int argc, char **argv) {
 // 1 ip_address 2 portnum 3 table
+   int argv0size = strlen(argv[0]);
    int f_dom, bd, i_port = 9991, rc = 0, nsid, rec, flag = 0, len = 30, i, j, cmd, addr_len, stat, all = 0, strn = 0;
    struct sockaddr_in *addr;
    struct sockaddr_in *rmt_addr;
@@ -145,6 +146,7 @@ main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		      }
 		      if(cpid == 0) {
+			strncpy(argv[0],"nfcdDB",argv0size);
 			prctl(PR_SET_NAME, "nfcd: write log to DB\0", NULL, NULL, NULL);
 		      LogMessage("nfcd", "Export entries ...");
 		      tosql(data_collection, head, count_entry, table);
