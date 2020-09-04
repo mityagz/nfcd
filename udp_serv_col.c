@@ -50,6 +50,7 @@ main(int argc, char **argv) {
    	printf("Fault to background\n");
    };
    signal(SIGALRM, sig_proc);
+   signal(SIGCHLD, ch_handler);
    alarm(1800);
       printf("%d\n",flush);
    b_addr = (struct in_addr *)malloc(sizeof(struct in_addr));
@@ -181,7 +182,7 @@ main(int argc, char **argv) {
 		      }
 		      }
 		   }
-      		   waitpid(-1, &wstatus, WNOHANG);
+      		   //waitpid(-1, &wstatus, WNOHANG);
 		  //tosql(data_collection, head); 
 		  //tosql(data, head);
 		  //stdout
