@@ -107,36 +107,36 @@ main(int argc, char **argv) {
 	    addr_len = sizeof(struct sockaddr*);
 	       while((stat=recvfrom(f_dom, buf, 2000, MSG_WAITALL, (struct sockaddr*) rmt_addr, &addr_len)) > 0 ) {
 		  all += stat;
-		  printf("Всего: %d байт\n", all);
+		  printf("Total: %d bytes\n", all);
 		  head = (struct header *) malloc(sizeof(struct header));
 		  head = head_parser(stat,buf, head);
-		  printf("Версия NetFlow:  %d\n", head->version.b1);
-		  printf("Число экспортированных потоков: %d\n", head->count.b1);
-		  //Выделение памяти для каждого потока
+		  printf("Version of NetFlow:  %d\n", head->version.b1);
+		  printf("Number of exported flows: %d\n", head->count.b1);
+		  //Allocate memory for each flow
 		     data = (struct data_v5 **) malloc((head->count.b1) * sizeof(struct data_v5 *));
 			for(i = 0; i < (head->count.b1); i++){
 				*(data+i) = (struct data_v5 *) malloc(sizeof(struct data_v5));
 				bzero(*(data + i), sizeof(struct data_v5));
 			}
-		  // Вычисление адресов начала блоков данных buf базовый адрес
-		  // заголовок head 24 байта
-		  // блок данных 48 байт
-		      base_buffer = buf + SIZE_HEADER * sizeof(char);  // Пропускаем заголовок
-		  //Вычисление адресов потоков
+		  // Calculate addresses of begin data blocks, buf base of address
+		  // head 24 bytes
+		  // Data block 48 bytes
+		      base_buffer = buf + SIZE_HEADER * sizeof(char);  // Skip header
+		  //Calculate address of flows
 		      for(i = 0; i < (head->count.b1); i++) {
 		         data_parser(base_buffer, *(data+i), i);
 			 base_buffer += SIZE_FLOW * sizeof(char);
 		      }
-		      // Обработка входной стуктуры
-		      //       analyzer_data_v5(data, data_collection);
+		      // Process stucture
+		      // analyzer_data_v5(data, data_collection);
 		  
 		  printf("Flush: %d\n", flush);
 		  //count_entry += head->count.b1;
 		  count_all += head->count.b1;
 		  count_entry2 += head->count.b1;
-		  //Копируем в коллектор
+		  //Copy to collector
 		  copy_to_collector(data_collection, data,head);
-		  //Вывод 
+		  //
 	          //SQL
 		  if(flush) {
 		      flush=0;
@@ -210,9 +210,9 @@ main(int argc, char **argv) {
 											 (*(data + i))->input.i_snmp,
 											 (*(data + i))->output.o_snmp);
 		      }
- printf("Кол-во экспорт записей %d  Ковл-во %d Всего %d\n",count_entry2,count_entry,count_all);
+ printf("Number of exported flows %d Number %d Total %d\n",count_entry2,count_entry,count_all);
 	        for(i = 0;i < (head->count.b1); i++) {
-	          free(*(data + i)); //Освобождение памяти
+	          free(*(data + i)); //Free blocks of memory
 	        }
 		  free(data);
 		  free(head);
