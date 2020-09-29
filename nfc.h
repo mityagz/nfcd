@@ -1,5 +1,9 @@
 #include <time.h>
+#include <glib.h>
 
+extern GHashTable *exportersTable;
+int get_exporter_id(char *);
+void get_exporters(void);
 int count_entry, count_entry1, count_entry2, cnt_data, flag, count_end, count_all;
 struct data_v5 **data_collection, **data_col;
 struct data_v5 **data;
@@ -11,11 +15,12 @@ char   * time_s;
 int    flush;
 void   analyzer_data_v5(struct data_v5**, struct data_v5**);
 void   sig_proc(int);
+void   ch_handler(int);
 int    copy_data_v5(struct data_v5 *, struct data_v5 *);
 void   append_data_v5(struct data_v5 *, struct data_v5 *);
 void   copy_to_collector(struct data_v5 **, struct data_v5**, struct header *);
 struct header * head_parser(int, char *, struct header *);
-struct data_v5 * data_parser(char *, struct data_v5 *, int);
+struct data_v5 * data_parser(char *, struct data_v5 *, int, int);
 int eq_data_v5(struct data_v5 *source, struct data_v5 *dest);
 void   LogMessage(char *, char *,...);
 void tosql(struct data_v5 **, struct header *, int, char *);
@@ -79,7 +84,11 @@ struct header {
 	 } reserved;
   };
   
-struct data_v5{
+struct data_v5 {
+	 struct exporter {
+			int id;
+	 } exporter;
+
 	 struct srcaddr{		//
 			int b0;		// byte0
 			int b1;		// byte1

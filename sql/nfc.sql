@@ -1,4 +1,5 @@
-create table nfc	(srcaddr varchar(15),
+create table nfc	(exporter_id int4,
+			srcaddr varchar(15),
 			dstaddr varchar(15),
 			nexthop varchar(15),
 			input int4,

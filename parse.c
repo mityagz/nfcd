@@ -61,7 +61,9 @@ int i, j;
 			if(eq_data_v5(*(data + i), *(data_collection + j))) {
 				append_data_v5(*(data_collection+j),*(data+i));
 			  flag = 1;
+#ifdef DEBUG
 			  printf("Append %d\n",count_entry);
+#endif
 			  break;
 		   }
 		}
@@ -69,7 +71,9 @@ int i, j;
 	        *(data_collection + count_entry) = (struct data_v5 *)malloc(sizeof(struct data_v5));
 	        copy_data_v5(*(data + i), *(data_collection + count_entry));
 		count_entry++;
+#ifdef DEBUG
 		printf("Parser %d",count_entry);
+#endif
 	     }
 	}
  }
@@ -100,7 +104,8 @@ int copy_data_v5(struct data_v5 *source,struct data_v5 *dest) {
 }
 
 int eq_data_v5(struct data_v5 *source, struct data_v5 *dest) {
- if(dest->srcaddr.b0 == source->srcaddr.b0 &&
+ if(dest->exporter.id == source->exporter.id &&
+    dest->srcaddr.b0 == source->srcaddr.b0 &&
     dest->srcaddr.b1 == source->srcaddr.b1 &&
     dest->srcaddr.b2 == source->srcaddr.b2 &&
     dest->srcaddr.b3 == source->srcaddr.b3 &&
@@ -171,7 +176,8 @@ struct header*
 	return head;
   }
 struct data_v5 * 
- data_parser(char *base_data, struct data_v5 *data, int cnt) {
+ data_parser(char *base_data, struct data_v5 *data, int cnt, int exporter_id) {
+    data->exporter.id = exporter_id;
     data->srcaddr.b0 = btod(*(base_data + 0));
     data->srcaddr.b1 = btod(*(base_data + 1));
     data->srcaddr.b2 = btod(*(base_data + 2));

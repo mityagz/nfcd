@@ -39,12 +39,16 @@ char *nexthop_addr;
       fprintf(stderr, "Connection to database '%s' failed.\n", dbName);
       fprintf(stderr, "%s", PQerrorMessage(conn));
    } else {
+#ifdef DEBUG
       fprintf(stderr, "Connection to database '%s' Ok.\n", dbName);
+#endif
    } 
    //Выделяем память дата/время
    date_s = (char *)malloc(10 * sizeof(char));
    time_s = (char *)malloc(10 * sizeof(char));
+#ifdef DEBUG
    printf("Trap_to_sql\n");
+#endif
     for(i = 0; i < cnt; i++){
 	//Получаем дату
 	get_date();
@@ -68,10 +72,12 @@ char *nexthop_addr;
 		(*(data_collection + i))->nexthop.b1,
 		(*(data_collection + i))->nexthop.b2,
 		(*(data_collection + i))->nexthop.b3);
-	sprintf(ins, "INSERT INTO %s (srcaddr,dstaddr,nexthop, input,output,dPkts,dOctets,First,Last, srcport,dstport,tcp_flags,prot,tos, src_as,dst_as,src_mask,dst_mask,dates,times) VALUES(%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s)", table, src_addr, dst_addr, nexthop_addr, (*(data_collection+i))->input.b1, (*(data_collection+i))->output.b1, (*(data_collection+i))->dPkts.summ_pack, (*(data_collection+i))->dOctets.summ, (*(data_collection+i))->First.b0, (*(data_collection+i))->Last.b0, (*(data_collection+i))->srcport.port, (*(data_collection+i))->dstport.port, (*(data_collection+i))->tcp_flags.b0, (*(data_collection+i))->prot.b0, (*(data_collection+i))->tos.b0, (*(data_collection+i))->src_as.s_as, (*(data_collection+i))->dst_as.d_as, (*(data_collection+i))->src_mask.b0, (*(data_collection+i))->dst_mask.b0, date_sql(times), time_sql(times)); 
+	sprintf(ins, "INSERT INTO %s (exporter_id, srcaddr, dstaddr, nexthop, input, output, dPkts, dOctets, First, Last, srcport, dstport, tcp_flags, prot, tos, src_as, dst_as, src_mask, dst_mask, dates, times) VALUES(%d,%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s)", table, (*(data_collection+i))->exporter.id, src_addr, dst_addr, nexthop_addr, (*(data_collection+i))->input.b1, (*(data_collection+i))->output.b1, (*(data_collection+i))->dPkts.summ_pack, (*(data_collection+i))->dOctets.summ, (*(data_collection+i))->First.b0, (*(data_collection+i))->Last.b0, (*(data_collection+i))->srcport.port, (*(data_collection+i))->dstport.port, (*(data_collection+i))->tcp_flags.b0, (*(data_collection+i))->prot.b0, (*(data_collection+i))->tos.b0, (*(data_collection+i))->src_as.s_as, (*(data_collection+i))->dst_as.d_as, (*(data_collection+i))->src_mask.b0, (*(data_collection+i))->dst_mask.b0, date_sql(times), time_sql(times)); 
 		  
 		  res = PQexec(conn, ins);
+#ifdef DEBUG
 		  printf("%s\n", ins);
+#endif
 		    free(nexthop_addr);
 		    free(dst_addr);
 		    free(src_addr);

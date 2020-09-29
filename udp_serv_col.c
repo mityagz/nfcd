@@ -22,7 +22,7 @@
 #define SIZE_COUNT	4
 
 
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
 // 1 ip_address 2 portnum 3 table
    int argv0size = strlen(argv[0]);
    int f_dom, bd, i_port = 9991, rc = 0, nsid, rec, flag = 0, len = 30, i, j, cmd, addr_len, stat, all = 0, strn = 0;
@@ -50,20 +50,28 @@ main(int argc, char **argv) {
    if(daemon(0,1) == 1){
    	printf("Fault to background\n");
    };
+   get_exporters();
    signal(SIGALRM, sig_proc);
    signal(SIGCHLD, ch_handler);
    alarm(1800);
+#ifdef DEBUG
       printf("%d\n",flush);
+#endif
    b_addr = (struct in_addr *)malloc(sizeof(struct in_addr));
    addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
    rmt_addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
    buf = (char *)malloc(2000*sizeof(char));
    buf_send = (char *)malloc(2000*sizeof(char));
    bzero(addr, sizeof(struct sockaddr_in));
+#ifdef DEBUG
    printf("Address %d  %s %d\n", inet_aton(i_addr, b_addr), i_addr, b_addr);
+#endif
    addr->sin_family = AF_INET;  
    addr->sin_port = htons(i_port);
+   printf("Address %d  %s %d\n", inet_aton(i_addr, b_addr), i_addr, b_addr);
+#ifdef DEBUG
 	printf("Addr: %s\n", i_addr);
+#endif
    addr->sin_addr.s_addr = b_addr->s_addr;
    //memcpy(&(addr->sin_addr), b_addr, sizeof(struct in_addr *));
    f_dom=socket(AF_INET, SOCK_DGRAM, 0);
@@ -71,16 +79,22 @@ main(int argc, char **argv) {
      printf("Connect Failed\n");
      printf("%s\n",strerror(errno));
    } else {
+#ifdef DEBUG
      printf("Connect Ok, ");
      printf("Sid = %d\n", f_dom);
+#endif
    }
   //for(i = i_port; i <= 65535; i++){
   //  addr->sin_port = htons(i_port + i);
+#ifdef DEBUG
 	printf("Port: %d\n", (int)atoi(*(argv + 2)));
+#endif
     addr->sin_port = htons((int)atoi(*(argv + 2)));
   if((bd = bind(f_dom, (struct sockaddr *)addr, sizeof(struct sockaddr))) >= 0) {
+#ifdef DEBUG
      printf("Bind Ok  %d\n", bd);
      printf("Port %d\n", i_port + i);
+#endif
      //break;
    } else if(bd < 0) {
 	printf("Bind ret: %d\n", bd);
@@ -106,12 +120,25 @@ main(int argc, char **argv) {
          if(rc > 0 && FD_ISSET(f_dom, &select_set)) {
 	    addr_len = sizeof(struct sockaddr*);
 	       while((stat=recvfrom(f_dom, buf, 2000, MSG_WAITALL, (struct sockaddr*) rmt_addr, &addr_len)) > 0 ) {
+		  struct in_addr raddr = rmt_addr->sin_addr;
+		  if(get_exporter_id(inet_ntoa(raddr)) == 0) {
+#ifdef DEBUG
+			printf("Unknown exporter: %s was skipped.\n", inet_ntoa(raddr));
+		    LogMessage("Unknown exporter: %s was skipped.\n", inet_ntoa(raddr));
+#endif
+			continue;
+		  }
+#ifdef DEBUG
+		  printf("Exporter: %s --> id: %d\n", inet_ntoa(raddr), get_exporter_id(inet_ntoa(raddr)));
 		  all += stat;
 		  printf("Total: %d bytes\n", all);
+#endif
 		  head = (struct header *) malloc(sizeof(struct header));
 		  head = head_parser(stat,buf, head);
+#ifdef DEBUG
 		  printf("Version of NetFlow:  %d\n", head->version.b1);
 		  printf("Number of exported flows: %d\n", head->count.b1);
+#endif
 		  //Allocate memory for each flow
 		     data = (struct data_v5 **) malloc((head->count.b1) * sizeof(struct data_v5 *));
 			for(i = 0; i < (head->count.b1); i++){
@@ -124,13 +151,15 @@ main(int argc, char **argv) {
 		      base_buffer = buf + SIZE_HEADER * sizeof(char);  // Skip header
 		  //Calculate address of flows
 		      for(i = 0; i < (head->count.b1); i++) {
-		         data_parser(base_buffer, *(data+i), i);
+		         data_parser(base_buffer, *(data+i), i, get_exporter_id(inet_ntoa(raddr)));
 			 base_buffer += SIZE_FLOW * sizeof(char);
 		      }
 		      // Process stucture
 		      // analyzer_data_v5(data, data_collection);
 		  
+#ifdef DEBUG
 		  printf("Flush: %d\n", flush);
+#endif
 		  //count_entry += head->count.b1;
 		  count_all += head->count.b1;
 		  count_entry2 += head->count.b1;
@@ -150,34 +179,46 @@ main(int argc, char **argv) {
 			prctl(PR_SET_NAME, "nfcd: write log to DB\0", NULL, NULL, NULL);
 		      LogMessage("nfcd", "Export entries ...");
 		      tosql(data_collection, head, count_entry, table);
+#ifdef DEBUG
 		      printf("Count_entry %d\n", count_entry);
+#endif
 		      LogMessage("nfcd", "Exported entries:");
 		      LogMessage("nfcd", "into base: %d", count_entry);
 		      LogMessage("nfcd", "from cisco device's: %d", count_entry2);
 		      LogMessage("nfcd", "from cisco device's all's: %d", count_all);
        		      LogMessage("nfcd", "compressed: %.2f %%", (float) count_entry/(float) count_entry2);
 		     {   i = 0;
+#ifdef DEBUG
 			  printf("Trap_free\n");
+#endif
 			while(i < count_entry) {
 		           free(*(data_collection + i));
 			   i++;
 		       }
+#ifdef DEBUG
 		       printf("Trap_free1\n");
+#endif
 		       count_entry1 = 0;
 		       count_entry = 0;
 		       count_entry2 = 0;
 		     }
+#ifdef DEBUG
 		      printf("FLUSH\n");
+#endif
 		      flush=0;
 		      exit(0);
 		      } else {
 		     	{   i = 0;
+#ifdef DEBUG
 				  printf("Trap_free\n");
+#endif
 				while(i < count_entry) {
 		           	 free(*(data_collection + i));
 			   	 i++;
 		       	        }
+#ifdef DEBUG
 		       		printf("Trap_free1\n");
+#endif
 		       		count_entry1 = 0;
 		       		count_entry = 0;
 		       		count_entry2 = 0;
@@ -188,6 +229,7 @@ main(int argc, char **argv) {
 		  //tosql(data_collection, head); 
 		  //tosql(data, head);
 		  //stdout
+#ifdef DEBUG
 		  printf("Src\tDst\tNextHop\n");
 		      for(i = 0;i < (head->count).b1; i++){
   printf("%d.%d.%d.%d \t%d.%d.%d.%d \t%d.%d.%d.%d \t  %d \t%d %d \t%d %d \t %d %d\n",
@@ -211,6 +253,7 @@ main(int argc, char **argv) {
 											 (*(data + i))->output.o_snmp);
 		      }
  printf("Number of exported flows %d Number %d Total %d\n",count_entry2,count_entry,count_all);
+#endif
 	        for(i = 0;i < (head->count.b1); i++) {
 	          free(*(data + i)); //Free blocks of memory
 	        }
