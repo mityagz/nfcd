@@ -21,26 +21,61 @@
 #define SIZE_HEADER	24
 #define SIZE_COUNT	4
 
+void usage(char **v) {
+ printf("Usage: %s -llisten-ip -pport -ttable\n", v[0]);
+}
 
 int main(int argc, char **argv) {
 // 1 ip_address 2 portnum 3 table
    int argv0size = strlen(argv[0]);
-   int f_dom, bd, i_port = 9991, rc = 0, nsid, rec, flag = 0, len = 30, i, j, cmd, addr_len, stat, all = 0, strn = 0;
+   int f_dom, bd, i_port, rc = 0, nsid, rec, flag = 0, len = 30, i, j, cmd, addr_len, stat, all = 0, strn = 0;
    struct sockaddr_in *addr;
    struct sockaddr_in *rmt_addr;
    struct in_addr *b_addr;
-   char *i_addr = "127.0.0.1";
+   char *i_addr;
    fd_set select_set;
    struct timeval timeRec;
    char *buf,*buf1,*buf_send;
-   char *send_buf = "Hello it's UDP server\n";
-   char *base_buffer,*log, *table = *(argv + 3);
+   char *base_buffer,*log, *table;
    time_t time_log;
    struct tm *time_log_tm = (struct tm *)malloc(sizeof(struct tm));
    count_entry = 0, count_entry1 = 0, count_entry2 = 0, cnt_data = 0, count_end = 0, count_all = 0;
    setlocale(LC_CTYPE,"C");
    time_log = time(NULL);
    time_log_tm = localtime(&time_log);
+   int c;
+
+	if(argc < 3) {
+	 usage(argv);
+	 exit(1);
+	}
+
+   while((c = getopt(argc, argv, "l:p:t:")) != -1) {
+	switch(c) {
+	 case 'l':
+		i_addr = optarg;
+		break;
+	 case 'p':
+		i_port = atoi(optarg);
+		break;
+	 case 't':
+		table = optarg;
+		break;
+	 case '?':
+        if (optopt == 'c')
+          fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+        else if (isprint (optopt))
+          fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf (stderr,
+                   "Unknown option character `\\x%x'.\n",
+                   optopt);
+        return 1;
+	 default:
+		abort();
+	}
+   }
+
    LogMessage("nfcd", "Starting collector ... Time: %d:%d:%d %d-%d-%d",
 	time_log_tm->tm_hour, time_log_tm->tm_min, time_log_tm->tm_sec,
         time_log_tm->tm_mday, time_log_tm->tm_mon + 1, time_log_tm->tm_year+1900);
@@ -89,7 +124,8 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
 	printf("Port: %d\n", (int)atoi(*(argv + 2)));
 #endif
-    addr->sin_port = htons((int)atoi(*(argv + 2)));
+    //addr->sin_port = htons((int)atoi(*(argv + 2)));
+    addr->sin_port = htons(i_port);
   if((bd = bind(f_dom, (struct sockaddr *)addr, sizeof(struct sockaddr))) >= 0) {
 #ifdef DEBUG
      printf("Bind Ok  %d\n", bd);
