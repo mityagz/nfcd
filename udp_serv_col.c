@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
    time_log_tm = localtime(&time_log);
    int c;
 
-	if(argc < 3) {
+	if(argc < 4 || argc > 4) {
 	 usage(argv);
 	 exit(1);
 	}
